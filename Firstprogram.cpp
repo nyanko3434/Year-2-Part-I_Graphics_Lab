@@ -1,9 +1,13 @@
-#include<iostream>
-#include<graphics.h>
-using namespace std;
+#include <graphics.h>
 
-int main(){
-    
+int main()
+{
+	int gm, gd = DETECT;
+	initgraph(&gd, &gm, NULL);
 
-    return 0;
+	// Your code here
+
+	getch();
+	closegraph();
+	return 0;
 }
