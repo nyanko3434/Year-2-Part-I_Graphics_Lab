@@ -43,6 +43,7 @@ void drawEllipse(int a, int b){
         plot(x, y);
     }
     getch();
+    getch();
     closegraph();
 }
 
