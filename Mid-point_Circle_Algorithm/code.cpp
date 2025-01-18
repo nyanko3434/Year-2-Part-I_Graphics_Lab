@@ -48,6 +48,8 @@ int main()
     midpointCircleDrawing(xc, yc, r);
     std::cout << "Circle drawn successfully!" << std::endl;
 
+    sleep(10000);
+    getch();
     getch();
     closegraph();
     return 0;
