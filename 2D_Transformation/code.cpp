@@ -3,8 +3,23 @@
 #include<cmath>
 using namespace std;
 
-void drawBresenham(int x1, int y1, int x2, int y2, int color = WHITE)
+typedef struct point{
+    int x;
+    int y;
+}Vector2;
+
+typedef struct triangle{
+    Vector2 p1;
+    Vector2 p2;
+    Vector2 p3;
+    int color = WHITE;
+}TRIANGLE;
+
+Vector2 centre = {250, 250};
+
+void drawBresenham(Vector2 p1, Vector2 p2, int color = WHITE)
 {
+    int x1 = p1.x + centre.x, y1 = p1.y + centre.y, x2 = p2.x + centre.x, y2 = p2.y + centre.y;
     int dx = abs(x2 - x1);
     int dy = abs(y2 - y1);
     int xi = x1 < x2 ? 1 : -1;
@@ -44,82 +59,149 @@ void drawBresenham(int x1, int y1, int x2, int y2, int color = WHITE)
     }
 }
 
-void draw_triangle(int x1, int y1, int x2, int y2, int x3, int y3, int color = WHITE, int xc = 250, int yc = 250)
-{
-    x1 += xc;
-    x2 += xc;
-    x3 += xc;
-    y1 += yc;
-    y2 += yc;
-    y3 += yc;
-    drawBresenham(x1, y1, x2, y2, color);
-    drawBresenham(x2, y2, x3, y3, color);
-    drawBresenham(x3, y3, x1, y1, color);
+void draw_triangle(TRIANGLE t){
+    drawBresenham(t.p1, t.p2, t.color);
+    drawBresenham(t.p1, t.p3, t.color);
+    drawBresenham(t.p3, t.p2, t.color);
 }
 
-void translate_triangle(int x1, int y1, int x2, int y2, int x3, int y3, int tx, int ty)
-{
-    draw_triangle(x1 + tx, y1 + ty, x2 + tx, y2 + ty, x3 + tx, y3 + ty, RED);
+TRIANGLE translate (TRIANGLE t, Vector2 v){
+    TRIANGLE t_;
+    t_.p1.x = t.p1.x + v.x;
+    t_.p1.y = t.p1.y + v.y;
+    t_.p2.x = t.p2.x + v.x;
+    t_.p2.y = t.p2.y + v.y;
+    t_.p3.x = t.p3.x + v.x;
+    t_.p3.y = t.p3.y + v.y;
+    t_.color = RED; 
+    return t_;
 }
 
-void scale_triangle(int x1, int y1, int x2, int y2, int x3, int y3, int sx, int sy){
-
-    int cx = (x1+x2+x3)/3, cy = (y1,y2,y3)/3;
-    x1 -= cx;
-    x2 -= cx;
-    x3 -= cx;
-    y1 -= cy;
-    y2 -= cy;
-    y3 -= cy;
-    x1 *= sx;
-    x2 *= sx;
-    x3 *= sx;
-    y1 *= sy;
-    y2 *= sy;
-    y3 *= sy;
-    draw_triangle(x1 + cx, y1 + cy, x2 + cx, y2 + cy, x3 + cx, y3 + cy, BLUE);
+TRIANGLE scale (TRIANGLE t, Vector2 v){
+    TRIANGLE t_;
+    Vector2 centroid = {(t.p1.x + t.p2.x + t.p3.x) / 3, (t.p1.y + t.p2.y + t.p3.y) / 3};
+    t_.p1.x = centroid.x + v.x * (t.p1.x - centroid.x);
+    t_.p1.y = centroid.y + v.y * (t.p1.y - centroid.y);
+    t_.p2.x = centroid.x + v.x * (t.p2.x - centroid.x);
+    t_.p2.y = centroid.y + v.y * (t.p2.y - centroid.y);
+    t_.p3.x = centroid.x + v.x * (t.p3.x - centroid.x);
+    t_.p3.y = centroid.y + v.y * (t.p3.y - centroid.y);
+    t_.color = GREEN;
+    return t_;
 }
 
-void rotate_triangle(int x1, int y1, int x2, int y2, int x3, int y3, int ro){
-    int cx = (x1+x2+x3)/3, cy = (y1,y2,y3)/3;
-    x1 -= cx;
-    x2 -= cx;
-    x3 -= cx;
-    y1 -= cy;
-    y2 -= cy;
-    y3 -= cy;
-    ro = ro * 3.14159 / 180;
-    int x1_ = x1*cos(ro) - y1*sin(ro);
-    int y1_ = x1*sin(ro) + y1*cos(ro);
-    int x2_ = x2*cos(ro) - y2*sin(ro);
-    int y2_ = x2*sin(ro) + y2*cos(ro);
-    int x3_ = x3*cos(ro) - y3*sin(ro);
-    int y3_ = x3*sin(ro) + y3*cos(ro);
-    draw_triangle(x1_ + cx, y1_ + cy, x2_ + cx, y2_ + cy, x3_ + cx, y3_ + cy, GREEN);
+TRIANGLE rotate (TRIANGLE t, float angle){
+    TRIANGLE t_;
+    angle = angle * 3.14159 / 180;
+    float s = sin(angle);
+    float c = cos(angle);
+    t_.p1.x = t.p1.x * c - t.p1.y * s;
+    t_.p1.y = t.p1.x * s + t.p1.y * c;
+    t_.p2.x = t.p2.x * c - t.p2.y * s;
+    t_.p2.y = t.p2.x * s + t.p2.y * c;
+    t_.p3.x = t.p3.x * c - t.p3.y * s;
+    t_.p3.y = t.p3.x * s + t.p3.y * c;
+    t_.color = BLUE;
+    return t_;
+}
+
+TRIANGLE reflect(TRIANGLE t, int axis){
+    TRIANGLE t_;
+    if(axis == 0){
+        t_.p1.x = t.p1.x;
+        t_.p1.y = -t.p1.y;
+        t_.p2.x = t.p2.x;
+        t_.p2.y = -t.p2.y;
+        t_.p3.x = t.p3.x;
+        t_.p3.y = -t.p3.y;
+    }
+    else if(axis == 1){
+        t_.p1.x = -t.p1.x;
+        t_.p1.y = t.p1.y;
+        t_.p2.x = -t.p2.x;
+        t_.p2.y = t.p2.y;
+        t_.p3.x = -t.p3.x;
+        t_.p3.y = t.p3.y;
+    }
+    else{
+        t_.p1.x = -t.p1.x;
+        t_.p1.y = -t.p1.y;
+        t_.p2.x = -t.p2.x;
+        t_.p2.y = -t.p2.y;
+        t_.p3.x = -t.p3.x;
+        t_.p3.y = -t.p3.y;
+    }
+    t_.color = YELLOW;
+    return t_;
+}
+
+TRIANGLE shear (TRIANGLE t, float sx, float sy){
+    TRIANGLE t_;
+    t_.p1.x = t.p1.x + sx * t.p1.y;
+    t_.p1.y = t.p1.y + sy * t.p1.x;
+    t_.p2.x = t.p2.x + sx * t.p2.y;
+    t_.p2.y = t.p2.y + sy * t.p2.x;
+    t_.p3.x = t.p3.x + sx * t.p3.y;
+    t_.p3.y = t.p3.y + sy * t.p3.x;
+    t_.color = CYAN;
+    return t_;
 }
 
 int main(){
-    int x1, x2, y1, y2, x3, y3, xc, yc;
-    // cout << "Enter the center of the triangle: " << endl;
-    // cin >> xc >> yc;
-    cout << "Enter the coordinates of the triangle: (point 1, point 2, point 3)" << endl;
-    cin >> x1 >> y1 >> x2 >> y2 >> x3 >> y3;
-    int tx, ty;
-    cout << "Enter the translation factor: " << endl;
-    cin >> tx >> ty;
-    int sx, sy;
-    cout << "Enter scaling factor : " << endl;
-    cin >> sx >> sy;
-    int ro;
-    cout << "Enter rotation angle : \n";
-    cin >> ro;
+    TRIANGLE t, t_; 
+    cout << "Enter the coordinates of the triangle: \n";
+    cout << "Enter the coordinates of the first point: \n";
+    cin >> t.p1.x >> t.p1.y;
+    cout << "Enter the coordinates of the second point: \n";
+    cin >> t.p2.x >> t.p2.y;
+    cout << "Enter the coordinates of the third point: \n";
+    cin >> t.p3.x >> t.p3.y;
+    int choice;
+    cout << "Enter the choice: \n";
+    cout << "1. Translate\n";
+    cout << "2. Scale\n";
+    cout << "3. Rotate\n";
+    cout << "4. Reflect\n";
+    cout << "5. Shear\n";
+    cin >> choice;
+    switch(choice){
+        case 1:
+            Vector2 v;
+            cout << "Enter the translation vector: \n";
+            cin >> v.x >> v.y;
+            t_ = translate(t, v);
+            break;
+        case 2:
+            Vector2 s;
+            cout << "Enter the scaling vector: \n";
+            cin >> s.x >> s.y;
+            t_ = scale(t, s);
+            break;
+        case 3:
+            float angle;
+            cout << "Enter the angle of rotation: ";
+            cin >> angle;
+            t_ = rotate(t, angle);
+            break;
+        case 4:
+            int axis;
+            cout << "Enter the axis of reflection: ";
+            cin >> axis;
+            t_ = reflect(t, axis);
+            break;
+        case 5:
+            float sx, sy;
+            cout << "Enter the shear factors: \n";
+            cin >> sx >> sy;
+            t_ = shear(t, sx, sy);
+            break;
+        default:
+            cout << "Invalid choice\n";
+    }
     int gd = DETECT, gm;
-    initgraph(&gd, &gm, NULL);
-    draw_triangle(x1, y1, x2, y2, x3, y3);
-    translate_triangle(x1, y1, x2, y2, x3, y3, tx, ty);
-    scale_triangle( x1,  y1,  x2,  y2,  x3,  y3,  sx,  sy);
-    rotate_triangle( x1,  y1,  x2,  y2,  x3,  y3,  ro);
-    getch();
+    initgraph(&gd, &gm, (char*)"");
+    draw_triangle(t);
+    draw_triangle(t_);
     getch();
     closegraph();
     return 0;
